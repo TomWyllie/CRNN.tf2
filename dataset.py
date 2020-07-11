@@ -45,7 +45,7 @@ def read_annotations(paths):
     return img_paths, labels
 
 
-class DatasetBuilder():
+class DatasetBuilder:
     def __init__(self, table_path, img_width, img_channels, ignore_case=False):
         self.table = tf.lookup.StaticHashTable(tf.lookup.TextFileInitializer(
             table_path, tf.string, tf.lookup.TextFileIndex.WHOLE_LINE, 
@@ -53,11 +53,12 @@ class DatasetBuilder():
         self.img_width = img_width
         self.img_channels = img_channels
         self.ignore_case = ignore_case
+        # self.ignore_case = False
         self.num_classes = self.table.size()
 
     def decode_and_resize(self, filename, label):
         img = tf.io.read_file(filename)
-        img = tf.io.decode_jpeg(img, channels=self.img_channels)
+        img = tf.io.decode_png(img, channels=self.img_channels)
         img = tf.image.convert_image_dtype(img, tf.float32)
         img = tf.image.resize(img, (32, self.img_width))
         return img, label
@@ -115,19 +116,20 @@ class Decoder:
         return strings
 
     def decode(self, inputs, from_pred=True, method='greedy'):
+        transposed_inputs = tf.transpose(inputs, perm=[1, 0, 2])
         if from_pred:
             logit_length = tf.fill([tf.shape(inputs)[0]], tf.shape(inputs)[1])
             if method == 'greedy':
                 decoded, _ = tf.nn.ctc_greedy_decoder(
-                    inputs=tf.transpose(inputs, perm=[1, 0, 2]),
+                    inputs=transposed_inputs,
                     sequence_length=logit_length,
                     merge_repeated=self.merge_repeated)
             elif method == 'beam_search':
                 decoded, _ = tf.nn.ctc_beam_search_decoder(
-                    inputs=tf.transpose(inputs, perm=[1, 0, 2]),
+                    inputs=transposed_inputs,
                     sequence_length=logit_length)
             inputs = decoded[0]
-        decoded = tf.sparse.to_dense(inputs, 
+        decoded = tf.sparse.to_dense(inputs,
                                      default_value=self.blank_index).numpy()
         decoded = self.map2string(decoded)
         return decoded

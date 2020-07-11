@@ -59,6 +59,7 @@ print('Training start at {}'.format(localtime))
 model = build_model(dataset_builder.num_classes, channels=args.img_channels)
 model.compile(optimizer=keras.optimizers.Adam(args.learning_rate),
               loss=CTCLoss(), metrics=[WordAccuracy()])
+model.summary()
 
 if args.restore:
     model.load_weights(args.restore, by_name=True, skip_mismatch=True)

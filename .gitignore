@@ -8,3 +8,6 @@ venv/
 
 logs/
 saved_models/
+
+.idea/*
+example/CRNN.h5
