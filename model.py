@@ -10,22 +10,22 @@ def vgg_style(input_tensor):
     x = layers.Conv2D(16, 3, padding='same', activation='relu')(input_tensor)
     x = layers.MaxPool2D(pool_size=2, padding='same')(x)
 
-    x = layers.Conv2D(16, 3, padding='same', activation='relu')(x)
+    x = layers.Conv2D(32, 3, padding='same', activation='relu')(x)
     x = layers.MaxPool2D(pool_size=2, padding='same')(x)
 
-    x = layers.Conv2D(16, 3, padding='same', use_bias=False)(x)
+    x = layers.Conv2D(64, 3, padding='same', use_bias=False)(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    x = layers.Conv2D(16, 3, padding='same', activation='relu')(x)
+    x = layers.Conv2D(64, 3, padding='same', activation='relu')(x)
     x = layers.MaxPool2D(pool_size=2, strides=(2, 1), padding='same')(x)
 
-    x = layers.Conv2D(32, 3, padding='same', use_bias=False)(x)
+    x = layers.Conv2D(128, 3, padding='same', use_bias=False)(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-    x = layers.Conv2D(32, 3, padding='same', activation='relu')(x)
+    x = layers.Conv2D(128, 3, padding='same', activation='relu')(x)
     x = layers.MaxPool2D(pool_size=2, strides=(2, 1), padding='same')(x)
 
-    x = layers.Conv2D(256, 2, use_bias=False)(x)
+    x = layers.Conv2D(128, 2, use_bias=False)(x)
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     return x
@@ -36,10 +36,8 @@ def build_model(num_classes, image_width=None, channels=1):
 
     img_input = keras.Input(shape=(32, image_width, channels))
     x = vgg_style(img_input)
-    x = layers.Reshape((-1, 256))(x)
+    x = layers.Reshape((-1, 128))(x)
 
-    # x = layers.LSTM(units=64, return_sequences=True)(x)
-    # x = layers.Bidirectional(layers.LSTM(units=72, return_sequences=True))(x)
-    x = layers.Bidirectional(layers.LSTM(units=72, return_sequences=True))(x)
+    x = layers.Bidirectional(layers.LSTM(units=128, return_sequences=True))(x)
     x = layers.Dense(units=num_classes)(x)
     return keras.Model(inputs=img_input, outputs=x, name='CRNN')
