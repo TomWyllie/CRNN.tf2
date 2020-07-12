@@ -47,11 +47,11 @@ with open(args.table, 'r') as f:
 model = keras.models.load_model(args.model, compile=False)
 decoder = Decoder(inv_table)
 
+y_pred = model.predict(imgs)
 
 # import imageio
 # import numpy as np
 # print(imgs)
-# y_pred = model.predict(imgs)
 # y = y_pred - np.min(y_pred)
 # y = np.asarray(255 * y / np.max(y), dtype=np.uint8)
 # imageio.imwrite('predictions1.png', y[0].T)

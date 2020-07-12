@@ -2,8 +2,12 @@ import argparse
 import time
 import os
 
-from tensorflow import keras
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_virtual_device_configuration(gpus[0], [
+    tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
+from tensorflow import keras
 from dataset import DatasetBuilder
 from model import build_model
 from losses import CTCLoss

@@ -1,0 +1,3 @@
+# NUM_CLASSES = 56
+NUM_CLASSES = 32
+
