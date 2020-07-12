@@ -4,7 +4,7 @@ from tensorflow import keras
 
 from dataset import DatasetBuilder
 from losses import CTCLoss
-from metrics import WordAccuracy
+from metrics import WordError
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-a', '--ann_paths', type=str, required=True, 
@@ -32,5 +32,5 @@ eval_ds, size = dataset_builder.build(args.ann_paths, False, args.batch_size)
 print('Num of eval samples: {}'.format(size))
 
 model = keras.models.load_model(args.model, compile=False)
-model.compile(loss=CTCLoss(), metrics=[WordAccuracy()])
+model.compile(loss=CTCLoss(), metrics=[WordError()])
 model.evaluate(eval_ds)

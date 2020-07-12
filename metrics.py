@@ -2,11 +2,11 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-class WordAccuracy(keras.metrics.Metric):
+class WordError(keras.metrics.Metric):
     """
-    Calculate the word accuracy between y_true and y_pred.
+    Calculate the word error between y_true and y_pred.
     """
-    def __init__(self, name='word_accuracy', **kwargs):
+    def __init__(self, name='word_error', **kwargs):
         super().__init__(name=name, **kwargs)
         self.total = self.add_weight(name='total', initializer='zeros')
         self.count = self.add_weight(name='count', initializer='zeros')
@@ -31,7 +31,7 @@ class WordAccuracy(keras.metrics.Metric):
         self.count.assign_add(batch_size - values)
 
     def result(self):
-        return self.count / self.total
+        return 1. - (self.count / self.total)
 
     def reset_states(self):
         self.count.assign(0)

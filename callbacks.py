@@ -13,8 +13,8 @@ class TrainingConfigWriter(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         self._write_config(epoch)
 
-    def on_train_end(self, logs=None):
-        os.remove(self.get_config_path())
+    # def on_train_end(self, logs=None):
+    #     os.remove(self.get_config_path())
 
     def _write_config(self, epoch):
         with open(self.get_config_path(), 'w') as f:

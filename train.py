@@ -14,7 +14,7 @@ from tensorflow import keras
 from dataset import DatasetBuilder
 from model import build_model
 from losses import CTCLoss
-from metrics import WordAccuracy
+from metrics import WordError
 from callbacks import TrainingConfigWriter
 
 parser = argparse.ArgumentParser()
@@ -61,12 +61,12 @@ dataset_builder = DatasetBuilder(args.table_path, args.img_width,
 train_ds, train_size = dataset_builder.build(args.train_ann_paths, True,
                                              args.batch_size)
 print('Num of training samples: {}'.format(train_size))
-saved_model_prefix = '{epoch:03d}_{word_accuracy:.4f}'
+saved_model_prefix = '{epoch:03d}_{word_error:.4f}'
 if args.val_ann_paths:
     val_ds, val_size = dataset_builder.build(args.val_ann_paths, False,
                                              args.batch_size)
     print('Num of val samples: {}'.format(val_size))
-    saved_model_prefix = saved_model_prefix + '_{val_word_accuracy:.4f}'
+    saved_model_prefix = saved_model_prefix + '_{val_word_error:.4f}'
 else:
     val_ds = None
 saved_model_path = ('saved_models/{}/'.format(localtime) +
@@ -74,7 +74,7 @@ saved_model_path = ('saved_models/{}/'.format(localtime) +
 
 model = build_model(dataset_builder.num_classes, channels=args.img_channels)
 model.compile(optimizer=keras.optimizers.Adam(args.learning_rate),
-              loss=CTCLoss(), metrics=[WordAccuracy()])
+              loss=CTCLoss(), metrics=[WordError()])
 
 if args.auto_resume and os.path.exists(config_path):
     # TODO improve path handling
