@@ -1,31 +1,29 @@
 import argparse
-from datetime import datetime
-import os
 import glob
 import json
-import tempfile
+import os
+import pathlib
+from datetime import datetime
+
+from tensorflow import keras
+
+from callbacks import TrainingConfigWriter
+from dataset import DatasetBuilder
+from losses import CTCLoss
+from metrics import WordError
+from model import build_model
 
 # import tensorflow as tf
 # gpus = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_virtual_device_configuration(gpus[0], [
 #     tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
 
-from tensorflow import keras
-from dataset import DatasetBuilder
-from model import build_model
-from losses import CTCLoss
-from metrics import WordError
-from callbacks import TrainingConfigWriter
-
 parser = argparse.ArgumentParser()
-parser.add_argument('-ta', '--train_ann_paths', type=str,
-                    required=True, nargs='+',
-                    help='The path of training data annotation file.')
-parser.add_argument('-va', '--val_ann_paths', type=str, nargs='+',
-                    help='The path of val data annotation file.')
-parser.add_argument('-t', '--table_path', type=str, required=True,
-                    help='The path of table file.')
-parser.add_argument('-w', '--img_width', type=int, default=100,
+parser.add_argument('--dir',
+                    default=os.path.join(str(pathlib.Path.home()),
+                                         'datasets/folkfriend'),
+                    help='Directory to contain the dataset files in')
+parser.add_argument('-w', '--img_width', type=int, default=749,
                     help='Image width, this parameter will affect the output '
                          'shape of the model, default is 100, so this model '
                          'can only predict up to 24 characters.')
@@ -46,6 +44,11 @@ parser.add_argument('--restore', type=str,
 parser.add_argument('-ar', '--auto-resume', action='store_true')
 args = parser.parse_args()
 
+val_path = os.path.join(args.dir, 'val.txt')
+table_path = os.path.join(args.dir, 'table.txt')
+train_path = os.path.join(args.dir, 'train.txt')
+
+
 localtime = datetime.now().strftime('%d-%b-%Y-%H%M%S')
 initial_epoch = 0
 
@@ -54,25 +57,24 @@ if args.auto_resume and os.path.exists(config_path):
     with open(config_path, 'r') as f:
         previous_config = json.load(f)
     localtime = previous_config['localtime']
-    initial_epoch = previous_config['epoch']
+    initial_epoch = previous_config['epoch'] + 1
 
-dataset_builder = DatasetBuilder(args.table_path, args.img_width,
-                                 args.img_channels, args.ignore_case)
-train_ds, train_size = dataset_builder.build(args.train_ann_paths, True,
+dataset_builder = DatasetBuilder(table_path, args.img_width,
+                                 args.img_channels)
+train_ds, train_size = dataset_builder.build([train_path], True,
                                              args.batch_size)
 print('Num of training samples: {}'.format(train_size))
 saved_model_prefix = '{epoch:03d}_{word_error:.4f}'
-if args.val_ann_paths:
-    val_ds, val_size = dataset_builder.build(args.val_ann_paths, False,
-                                             args.batch_size)
-    print('Num of val samples: {}'.format(val_size))
-    saved_model_prefix = saved_model_prefix + '_{val_word_error:.4f}'
-else:
-    val_ds = None
+
+val_ds, val_size = dataset_builder.build([val_path], False,
+                                         args.batch_size)
+print('Num of val samples: {}'.format(val_size))
+saved_model_prefix = saved_model_prefix + '_{val_word_error:.4f}'
+
 saved_model_path = ('saved_models/{}/'.format(localtime) +
                     saved_model_prefix + '.h5')
 
-model = build_model(dataset_builder.num_classes, channels=args.img_channels)
+model = build_model(channels=args.img_channels)
 model.compile(optimizer=keras.optimizers.Adam(args.learning_rate),
               loss=CTCLoss(), metrics=[WordError()])
 

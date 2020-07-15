@@ -2,6 +2,7 @@ import os
 import re
 
 import tensorflow as tf
+import config
 
 
 class UnsupportedFormatError(Exception):
@@ -26,6 +27,10 @@ def read_annotation(path):
         elif re.fullmatch(r'.+\.\w+ .+', line):
             print('[image path] label')
             content = [l.strip().split() for l in f.readlines() + [line]]
+            for i, c in enumerate(content):
+                if len(c) == 1:
+                    # Add blank to any empty
+                    content[i].append('-')
             img_paths, labels = zip(*content)
         else:
             raise UnsupportedFormatError('Unsupported annotation format')
@@ -46,21 +51,25 @@ def read_annotations(paths):
 
 
 class DatasetBuilder:
-    def __init__(self, table_path, img_width, img_channels, ignore_case=False):
+    def __init__(self, table_path, img_width, img_channels):
         self.table = tf.lookup.StaticHashTable(tf.lookup.TextFileInitializer(
-            table_path, tf.string, tf.lookup.TextFileIndex.WHOLE_LINE, 
+            table_path, tf.string, tf.lookup.TextFileIndex.WHOLE_LINE,
             tf.int64, tf.lookup.TextFileIndex.LINE_NUMBER), -1)
         self.img_width = img_width
         self.img_channels = img_channels
-        self.ignore_case = ignore_case
-        # self.ignore_case = False
         self.num_classes = self.table.size()
+        if self.num_classes != config.NUM_CLASSES:
+            raise ValueError(f"{self.num_classes} is not equal to "
+                             f"{config.NUM_CLASSES}")
+
+        print('NUM_CLASSES', self.num_classes)
 
     def decode_and_resize(self, filename, label):
         img = tf.io.read_file(filename)
         img = tf.io.decode_png(img, channels=self.img_channels)
         img = tf.image.convert_image_dtype(img, tf.float32)
-        img = tf.image.resize(img, (32, self.img_width))
+        img = tf.image.resize(img, (config.NUM_MIDI_ROWS, self.img_width))
+        print('IMAGE SHAPE', img.shape)
         return img, label
 
     def tokenize(self, imgs, labels):
@@ -68,24 +77,24 @@ class DatasetBuilder:
         tokens = tf.ragged.map_flat_values(self.table.lookup, chars)
         tokens = tokens.to_sparse()
         return imgs, tokens
-        
+
     def build(self, ann_paths, shuffle, batch_size):
         """
         build dataset, it will auto detect each annotation file's format.
         """
         img_paths, labels = read_annotations(ann_paths)
-        if self.ignore_case:
-            labels = [label.lower() for label in labels]
+        # if self.ignore_case:
+        #     labels = [label.lower() for label in labels]
         size = len(img_paths)
         ds = tf.data.Dataset.from_tensor_slices((img_paths, labels))
         if shuffle:
             ds = ds.shuffle(buffer_size=10000)
-        ds = ds.map(self.decode_and_resize, 
+        ds = ds.map(self.decode_and_resize,
                     num_parallel_calls=tf.data.experimental.AUTOTUNE)
         # Ignore the errors e.g. decode error or invalid data.
         ds = ds.apply(tf.data.experimental.ignore_errors())
         ds = ds.batch(batch_size)
-        ds = ds.map(self.tokenize, 
+        ds = ds.map(self.tokenize,
                     num_parallel_calls=tf.data.experimental.AUTOTUNE)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
         return ds, size
@@ -110,7 +119,7 @@ class Decoder:
     def map2string(self, inputs):
         strings = []
         for i in inputs:
-            text = [self.table[char_index] for char_index in i 
+            text = [self.table[char_index] for char_index in i
                     if char_index != self.blank_index]
             strings.append(''.join(text))
         return strings

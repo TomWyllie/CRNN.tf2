@@ -1,4 +1,3 @@
-import errno
 import os
 import subprocess
 import sys
@@ -7,16 +6,20 @@ from callbacks import TrainingConfigWriter
 
 
 def main():
+    # If it fails 100 times something is really badly wrong.
     for _ in range(100):
         subprocess.run(['python', 'train.py',
-                        '-ta', '/home/tom/datasets/rnn-dummy/train.txt',
-                        '-va', '/home/tom/datasets/rnn-dummy/val.txt',
-                        '-t', '/home/tom/datasets/rnn-dummy/table.txt',
+                        '--dir', '/home/tom/datasets/folkfriend/',
                         '-ar',
-                        '-w', '750',
+                        '-w', '749',
                         '-b', '128',
-                        '-e', '100',
-                        '-lr', '0.0002'
+                        '-e', '500',
+                        # Recommend starting with 0.002 and progressing down to
+                        #   0.0002 and then 0.00002, adjusting by hand once loss
+                        #   has flattened out (and restarting training).
+                        '-lr', '0.002'
+                        # '-lr', '0.0001'
+                        # '-lr', '0.00002'
                         ], stdout=sys.stdout, bufsize=1)
 
         # If it finished training successfully then the config file will have been removed

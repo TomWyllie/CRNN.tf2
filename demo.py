@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 from dataset import Decoder
+import config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('images', type=str,
@@ -13,7 +14,7 @@ parser.add_argument('table', type=str,
                     help='The path of table file.')
 parser.add_argument('model', type=str,
                     help='The saved model.')
-parser.add_argument('-w', '--img_width', type=int, default=100,
+parser.add_argument('-w', '--img_width', type=int, default=749,
                     help='Image width, this parameter will affect the output '
                          'shape of the model, default is 100, so this model '
                          'can only predict up to 24 characters.')
@@ -27,7 +28,7 @@ def read_img_and_preprocess(path):
     img = tf.io.read_file(path)
     img = tf.io.decode_png(img, channels=args.img_channels)
     img = tf.image.convert_image_dtype(img, tf.float32)
-    img = tf.image.resize(img, (32, args.img_width))
+    img = tf.image.resize(img, (config.NUM_MIDI_ROWS, args.img_width))
     return img
 
 

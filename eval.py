@@ -26,8 +26,8 @@ parser.add_argument('--ignore_case', action='store_true',
                     help='Whether ignore case.(default false)')
 args = parser.parse_args()
 
-dataset_builder = DatasetBuilder(args.table_path, args.img_width, 
-                  args.img_channels, args.ignore_case)
+dataset_builder = DatasetBuilder(args.table_path, args.img_width,
+                                 args.img_channels)
 eval_ds, size = dataset_builder.build(args.ann_paths, False, args.batch_size)
 print('Num of eval samples: {}'.format(size))
 
