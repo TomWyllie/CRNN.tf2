@@ -64,12 +64,12 @@ dataset_builder = DatasetBuilder(table_path, args.img_width,
 train_ds, train_size = dataset_builder.build([train_path], True,
                                              args.batch_size)
 print('Num of training samples: {}'.format(train_size))
-saved_model_prefix = '{epoch:03d}_{word_error:.4f}'
+saved_model_prefix = '{epoch:03d}_{word_edit_distance:.4f}'
 
 val_ds, val_size = dataset_builder.build([val_path], False,
                                          args.batch_size)
 print('Num of val samples: {}'.format(val_size))
-saved_model_prefix = saved_model_prefix + '_{val_word_error:.4f}'
+saved_model_prefix = saved_model_prefix + '_{word_edit_distance:.4f}'
 
 saved_model_path = ('saved_models/{}/'.format(localtime) +
                     saved_model_prefix + '.h5')

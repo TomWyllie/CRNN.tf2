@@ -9,7 +9,8 @@ def main():
     # If it fails 100 times something is really badly wrong.
     for _ in range(100):
         subprocess.run(['python', 'train.py',
-                        '--dir', '/home/tom/datasets/folkfriend/',
+                        # '--dir', '/home/tom/datasets/folkfriend/',
+                        '--dir', '/home/tom/datasets/rnn-dummy/',
                         '-ar',
                         '-w', '749',
                         '-b', '128',

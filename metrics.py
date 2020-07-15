@@ -6,10 +6,10 @@ class WordError(keras.metrics.Metric):
     """
     Calculate the word error between y_true and y_pred.
     """
-    def __init__(self, name='word_error', **kwargs):
+    def __init__(self, name='word_edit_distance', **kwargs):
         super().__init__(name=name, **kwargs)
         self.total = self.add_weight(name='total', initializer='zeros')
-        self.count = self.add_weight(name='count', initializer='zeros')
+        self.dist = self.add_weight(name='count', initializer='zeros')
                 
     def update_state(self, y_true, y_pred, sample_weight=None):
         batch_size = tf.shape(y_true)[0]
@@ -20,19 +20,17 @@ class WordError(keras.metrics.Metric):
             sequence_length=logit_length)
         y_true = tf.sparse.reset_shape(y_true, [batch_size, max_width])
         y_pred = tf.sparse.reset_shape(decoded[0], [batch_size, max_width])
-        y_true = tf.sparse.to_dense(y_true, default_value=-1)
-        y_pred = tf.sparse.to_dense(y_pred, default_value=-1)
-        y_pred = tf.cast(y_pred, tf.float32)
-        values = tf.math.reduce_any(tf.math.not_equal(y_true, y_pred), axis=1)
-        values = tf.cast(values, tf.float32)
-        values = tf.reduce_sum(values)
+        y_true = tf.cast(y_true, tf.int64)
+        distances = tf.edit_distance(y_pred, y_true)
+        sum_dist = tf.reduce_sum(distances)
         batch_size = tf.cast(batch_size, tf.float32)
         self.total.assign_add(batch_size)
-        self.count.assign_add(batch_size - values)
+        self.dist.assign_add(sum_dist)
 
     def result(self):
-        return 1. - (self.count / self.total)
+        # Value returned is percentage difference between prediction / label
+        return 100 * self.dist / self.total
 
     def reset_states(self):
-        self.count.assign(0)
+        self.dist.assign(0)
         self.total.assign(0)
